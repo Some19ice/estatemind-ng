@@ -39,7 +39,6 @@ export default function NewListingPage() {
     },
   });
 
-  // eslint-disable-next-line react-hooks/incompatible-library
   const propertyType = watch('type');
 
   const handleStateChange = (e: React.ChangeEvent<HTMLSelectElement>) => {

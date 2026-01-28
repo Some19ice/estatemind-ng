@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useTransition } from 'react';
+import React, { useCallback, useEffect, useRef, useState, useTransition } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Plus, Search, Edit2, Trash2, Eye, Home, Loader2, X, AlertTriangle } from 'lucide-react';
@@ -52,14 +52,82 @@ export default function MyListingsClient({
     property: null,
   });
   const [isPending, startTransition] = useTransition();
+  const modalRef = useRef<HTMLDivElement | null>(null);
+  const previouslyFocusedElementRef = useRef<HTMLElement | null>(null);
+
+  const closeDeleteModal = useCallback(() => {
+    if (isPending) return;
+    setDeleteModal({ open: false, property: null });
+  }, [isPending]);
+
+  const getModalFocusables = useCallback(() => {
+    if (!modalRef.current) return [];
+    return Array.from(
+      modalRef.current.querySelectorAll<HTMLElement>(
+        'a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])',
+      ),
+    ).filter((element) => !element.hasAttribute('disabled') && element.getAttribute('aria-hidden') !== 'true');
+  }, []);
+
+  useEffect(() => {
+    if (!deleteModal.open) return;
+
+    previouslyFocusedElementRef.current = document.activeElement as HTMLElement | null;
+
+    const focusables = getModalFocusables();
+    const firstFocusable = focusables[0] ?? modalRef.current;
+    if (firstFocusable) {
+      firstFocusable.focus();
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape' || isPending) return;
+      event.preventDefault();
+      closeDeleteModal();
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      previouslyFocusedElementRef.current?.focus();
+    };
+  }, [closeDeleteModal, deleteModal.open, getModalFocusables, isPending]);
+
+  const handleModalKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.key !== 'Tab') return;
+
+    const focusables = getModalFocusables();
+    if (focusables.length === 0) {
+      event.preventDefault();
+      modalRef.current?.focus();
+      return;
+    }
+
+    const firstFocusable = focusables[0];
+    const lastFocusable = focusables[focusables.length - 1];
+    const activeElement = document.activeElement;
+
+    if (event.shiftKey && activeElement === firstFocusable) {
+      event.preventDefault();
+      lastFocusable.focus();
+    } else if (!event.shiftKey && activeElement === lastFocusable) {
+      event.preventDefault();
+      firstFocusable.focus();
+    }
+  };
 
   // Filter listings based on search and status
   const filteredListings = listings.filter((property) => {
+    const normalizedQuery = searchQuery.toLowerCase();
+    const title = property.title?.toLowerCase() ?? '';
+    const address = property.address?.toLowerCase() ?? '';
+    const city = property.city?.toLowerCase() ?? '';
     const matchesSearch =
       searchQuery === '' ||
-      property.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      property.address.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      property.city.toLowerCase().includes(searchQuery.toLowerCase());
+      title.includes(normalizedQuery) ||
+      address.includes(normalizedQuery) ||
+      city.includes(normalizedQuery);
 
     const matchesStatus =
       statusFilter === 'all' || property.status === statusFilter;
@@ -111,11 +179,14 @@ export default function MyListingsClient({
             placeholder="Search by title or location..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            aria-label="Search by title or location"
             className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none"
           />
           {searchQuery && (
             <button
+              type="button"
               onClick={() => setSearchQuery('')}
+              aria-label="Clear search"
               className="absolute right-3 top-3 text-slate-400 hover:text-slate-600"
             >
               <X className="w-4 h-4" />
@@ -125,6 +196,7 @@ export default function MyListingsClient({
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
+          aria-label="Filter by status"
           className="px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none"
         >
           <option value="all">All Status</option>
@@ -272,24 +344,40 @@ export default function MyListingsClient({
 
       {/* Delete Confirmation Modal */}
       {deleteModal.open && deleteModal.property && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl">
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+          onClick={closeDeleteModal}
+        >
+          <div
+            ref={modalRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-modal-title"
+            aria-describedby="delete-modal-description"
+            tabIndex={-1}
+            onKeyDown={handleModalKeyDown}
+            onClick={(event) => event.stopPropagation()}
+            className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl"
+          >
             <div className="flex items-center gap-4 mb-4">
               <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center shrink-0">
                 <AlertTriangle className="w-6 h-6 text-red-600" />
               </div>
               <div>
-                <h3 className="text-lg font-bold text-slate-900">Delete Property</h3>
+                <h3 id="delete-modal-title" className="text-lg font-bold text-slate-900">
+                  Delete Property
+                </h3>
                 <p className="text-slate-500 text-sm">This action cannot be undone.</p>
               </div>
             </div>
-            <p className="text-slate-600 mb-6">
+            <p id="delete-modal-description" className="text-slate-600 mb-6">
               Are you sure you want to delete <strong>{deleteModal.property.title}</strong>? This
               will permanently remove the listing from your account.
             </p>
             <div className="flex gap-3 justify-end">
               <button
-                onClick={() => setDeleteModal({ open: false, property: null })}
+                onClick={closeDeleteModal}
+                aria-label="Close delete dialog"
                 className="px-4 py-2 text-slate-600 font-medium hover:text-slate-800 transition-colors"
                 disabled={isPending}
               >

@@ -2,7 +2,10 @@
 
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
-import { listingFormSchema } from '@/lib/validations/listing';
+import {
+  listingUpdateSchema,
+  validateListingUpdate,
+} from "@/lib/validations/listing"
 import { isValidStatusTransition, type PropertyStatus } from '@/lib/listings/status';
 
 export async function deleteProperty(propertyId: string) {
@@ -78,15 +81,20 @@ export async function updatePropertyStatus(
     return { error: 'Invalid status transition' };
   }
 
-  const { error } = await supabase
-    .from('properties')
+  const { data: updatedProperties, error } = await supabase
+    .from("properties")
     .update({ status, updated_at: new Date().toISOString() })
-    .eq('id', propertyId)
-    .eq('owner_id', user.id);
+    .eq("id", propertyId)
+    .eq("owner_id", user.id)
+    .select("id")
 
   if (error) {
     console.error('Update status error:', error);
     return { error: error.message };
+  }
+
+  if (!updatedProperties || updatedProperties.length === 0) {
+    return { error: "Property not found or unauthorized" }
   }
 
   revalidatePath('/dashboard/listings');
@@ -122,20 +130,47 @@ export async function updateProperty(
     return { error: 'You must be logged in to update a property' };
   }
 
-  const parsed = listingFormSchema.partial().safeParse(data);
+  const { data: existingProperty, error: fetchError } = await supabase
+    .from("properties")
+    .select("owner_id, type, period")
+    .eq("id", propertyId)
+    .single()
+
+  if (fetchError || !existingProperty) {
+    return { error: "Property not found" }
+  }
+
+  if (existingProperty.owner_id !== user.id) {
+    return { error: "You do not have permission to update this property" }
+  }
+
+  const parsed = listingUpdateSchema.safeParse(data)
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message || 'Invalid listing data' };
   }
 
-  const { error } = await supabase
-    .from('properties')
+  const updateError = validateListingUpdate(
+    { type: existingProperty.type, period: existingProperty.period },
+    parsed.data,
+  )
+  if (updateError) {
+    return { error: updateError }
+  }
+
+  const { data: updatedProperties, error } = await supabase
+    .from("properties")
     .update({ ...parsed.data, updated_at: new Date().toISOString() })
-    .eq('id', propertyId)
-    .eq('owner_id', user.id);
+    .eq("id", propertyId)
+    .eq("owner_id", user.id)
+    .select("id")
 
   if (error) {
     console.error('Update error:', error);
     return { error: error.message };
+  }
+
+  if (!updatedProperties || updatedProperties.length === 0) {
+    return { error: "Property not found or unauthorized" }
   }
 
   revalidatePath('/dashboard/listings');

@@ -6,12 +6,21 @@ import MyListingsClient from './MyListingsClient';
 export default async function MyListingsPage() {
   const supabase = await createClient();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { data, error: authErrorRaw } = await supabase.auth.getUser();
+  const user = data.user;
+  const authError = authErrorRaw as { message?: string } | null;
+
+  if (authError) {
+    return (
+      <MyListingsClient
+        initialListings={[]}
+        initialError={authError.message ?? 'Unable to fetch user session.'}
+      />
+    );
+  }
 
   // Fetch user's properties
-  const { data: properties, error } = user
+  const { data: properties, error: propertiesError } = user
     ? await supabase
         .from('properties')
         .select('*')
@@ -21,10 +30,7 @@ export default async function MyListingsPage() {
 
   const listings = (properties || []) as Property[];
 
-  return (
-    <MyListingsClient
-      initialListings={listings}
-      initialError={error?.message || null}
-    />
-  );
+  const initialError = propertiesError?.message || null;
+
+  return <MyListingsClient initialListings={listings} initialError={initialError} />;
 }

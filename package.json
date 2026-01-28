@@ -15,6 +15,7 @@
     "@hookform/resolvers": "^5.2.2",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.93.2",
+    "@upstash/redis": "^1.36.1",
     "ai": "^6.0.58",
     "clsx": "^2.1.1",
     "lucide-react": "^0.563.0",

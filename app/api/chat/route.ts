@@ -1,11 +1,19 @@
 import { streamText } from 'ai';
 import { google } from '@ai-sdk/google';
+import { Redis } from "@upstash/redis"
 import { NIGERIAN_REAL_ESTATE_SYSTEM_PROMPT } from '@/lib/prompts/real-estate';
 import { createClient } from '@/lib/supabase/server';
 
 const RATE_LIMIT_WINDOW_MS = 60_000;
 const RATE_LIMIT_MAX = 20;
-const rateLimitStore = new Map<string, { count: number; resetAt: number }>();
+const redis = Redis.fromEnv()
+const rateLimitScript = redis.createScript<number>(`
+  local current = redis.call("INCR", KEYS[1])
+  if current == 1 then
+    redis.call("PEXPIRE", KEYS[1], ARGV[1])
+  end
+  return current
+`)
 
 function getRateLimitKey(req: Request, userId?: string | null) {
   if (userId) {
@@ -19,18 +27,9 @@ function getRateLimitKey(req: Request, userId?: string | null) {
   return `ip:${ip}`;
 }
 
-function isRateLimited(key: string) {
-  const now = Date.now();
-  const entry = rateLimitStore.get(key);
-  if (!entry || entry.resetAt <= now) {
-    rateLimitStore.set(key, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
-    return false;
-  }
-  if (entry.count >= RATE_LIMIT_MAX) {
-    return true;
-  }
-  entry.count += 1;
-  return false;
+async function isRateLimited(key: string) {
+  const current = await rateLimitScript.eval([key], [`${RATE_LIMIT_WINDOW_MS}`])
+  return current > RATE_LIMIT_MAX
 }
 
 export async function POST(req: Request) {
@@ -40,12 +39,12 @@ export async function POST(req: Request) {
       data: { user },
     } = await supabase.auth.getUser();
 
-    const rateKey = getRateLimitKey(req, user?.id);
-    if (isRateLimited(rateKey)) {
+    const rateKey = `ratelimit:chat:${getRateLimitKey(req, user?.id)}`
+    if (await isRateLimited(rateKey)) {
       return new Response(
-        JSON.stringify({ error: 'Too many requests. Please try again later.' }),
-        { status: 429, headers: { 'Content-Type': 'application/json' } }
-      );
+        JSON.stringify({ error: "Too many requests. Please try again later." }),
+        { status: 429, headers: { "Content-Type": "application/json" } },
+      )
     }
 
     if (!user) {
@@ -56,12 +55,77 @@ export async function POST(req: Request) {
     }
 
     const { messages } = await req.json();
+    const MAX_MESSAGES = 50
+    const MAX_CONTENT_LENGTH = 4000
+    const allowedRoles = new Set(["user", "assistant", "system"])
+
+    if (!Array.isArray(messages) || messages.length > MAX_MESSAGES) {
+      return new Response(
+        JSON.stringify({ error: "Invalid messages payload." }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        },
+      )
+    }
+
+    const validatedMessages: Array<{
+      role: "user" | "assistant" | "system"
+      content: string
+    }> = []
+    for (const message of messages) {
+      if (!message || typeof message !== "object" || Array.isArray(message)) {
+        return new Response(
+          JSON.stringify({ error: "Invalid messages payload." }),
+          {
+            status: 400,
+            headers: { "Content-Type": "application/json" },
+          },
+        )
+      }
+
+      const { role, content } = message as { role?: unknown; content?: unknown }
+      if (typeof role !== "string" || !allowedRoles.has(role)) {
+        return new Response(
+          JSON.stringify({ error: "Invalid message role." }),
+          {
+            status: 400,
+            headers: { "Content-Type": "application/json" },
+          },
+        )
+      }
+      if (typeof content !== "string") {
+        return new Response(
+          JSON.stringify({ error: "Invalid message content." }),
+          {
+            status: 400,
+            headers: { "Content-Type": "application/json" },
+          },
+        )
+      }
+
+      const trimmedContent = content.trim()
+      if (!trimmedContent || trimmedContent.length > MAX_CONTENT_LENGTH) {
+        return new Response(
+          JSON.stringify({ error: "Invalid message content." }),
+          {
+            status: 400,
+            headers: { "Content-Type": "application/json" },
+          },
+        )
+      }
+
+      validatedMessages.push({
+        role: role as "user" | "assistant" | "system",
+        content: trimmedContent,
+      })
+    }
 
     const result = streamText({
-      model: google('gemini-2.0-flash'),
+      model: google("gemini-2.0-flash"),
       system: NIGERIAN_REAL_ESTATE_SYSTEM_PROMPT,
-      messages,
-    });
+      messages: validatedMessages,
+    })
 
     return result.toTextStreamResponse();
   } catch (error) {

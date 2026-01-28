@@ -28,6 +28,7 @@ interface SidebarContentProps {
   displayName: string;
   roleDisplay: string;
   signingOut: boolean;
+  signOutError: string | null;
   onSignOut: () => Promise<void>;
   onNavigate: () => void;
 }
@@ -38,6 +39,7 @@ function SidebarContent({
   displayName,
   roleDisplay,
   signingOut,
+  signOutError,
   onSignOut,
   onNavigate,
 }: SidebarContentProps) {
@@ -45,7 +47,8 @@ function SidebarContent({
     if (name) {
       return name
         .split(' ')
-        .map((n) => n[0])
+        .filter((part) => part.length > 0)
+        .map((part) => part[0])
         .join('')
         .toUpperCase()
         .slice(0, 2);
@@ -106,6 +109,9 @@ function SidebarContent({
           <LogOut className="w-5 h-5" />
           {signingOut ? 'Signing out...' : 'Sign Out'}
         </button>
+        {signOutError ? (
+          <p className="mt-2 text-xs text-red-400">{signOutError}</p>
+        ) : null}
       </div>
     </>
   );
@@ -124,13 +130,21 @@ export default function DashboardSidebar({ user }: DashboardSidebarProps) {
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
+  const [signOutError, setSignOutError] = useState<string | null>(null);
 
   const handleSignOut = async () => {
     setSigningOut(true);
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    router.push('/');
-    router.refresh();
+    setSignOutError(null);
+    try {
+      const supabase = createClient();
+      await supabase.auth.signOut();
+      router.push('/');
+      router.refresh();
+    } catch (err) {
+      console.error(err);
+      setSigningOut(false);
+      setSignOutError('Sign out failed. Please try again.');
+    }
   };
 
   const displayName = user.fullName || user.email?.split('@')[0] || 'User';
@@ -142,6 +156,9 @@ export default function DashboardSidebar({ user }: DashboardSidebarProps) {
       <button
         onClick={() => setMobileMenuOpen(true)}
         className="md:hidden fixed top-4 left-4 z-50 p-2 bg-slate-900 text-white rounded-lg shadow-lg"
+        aria-label="Open main menu"
+        aria-expanded={mobileMenuOpen}
+        aria-controls="mobile-dashboard-sidebar"
       >
         <Menu className="w-6 h-6" />
       </button>
@@ -156,6 +173,7 @@ export default function DashboardSidebar({ user }: DashboardSidebarProps) {
 
       {/* Mobile drawer */}
       <aside
+        id="mobile-dashboard-sidebar"
         className={`md:hidden fixed inset-y-0 left-0 z-50 w-64 bg-slate-900 text-white flex flex-col transform transition-transform duration-300 ease-in-out ${
           mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
@@ -163,6 +181,7 @@ export default function DashboardSidebar({ user }: DashboardSidebarProps) {
         <button
           onClick={() => setMobileMenuOpen(false)}
           className="absolute top-4 right-4 text-slate-400 hover:text-white"
+          aria-label="Close main menu"
         >
           <X className="w-6 h-6" />
         </button>
@@ -172,6 +191,7 @@ export default function DashboardSidebar({ user }: DashboardSidebarProps) {
           displayName={displayName}
           roleDisplay={roleDisplay}
           signingOut={signingOut}
+          signOutError={signOutError}
           onSignOut={handleSignOut}
           onNavigate={() => setMobileMenuOpen(false)}
         />
@@ -185,6 +205,7 @@ export default function DashboardSidebar({ user }: DashboardSidebarProps) {
           displayName={displayName}
           roleDisplay={roleDisplay}
           signingOut={signingOut}
+          signOutError={signOutError}
           onSignOut={handleSignOut}
           onNavigate={() => undefined}
         />

@@ -69,6 +69,38 @@ export const listingFormSchema = listingFormBaseSchema.superRefine((data, ctx) =
 
 export type ListingFormData = z.infer<typeof listingFormSchema>;
 
+export const listingUpdateSchema = listingFormBaseSchema.partial()
+export type ListingUpdateData = z.infer<typeof listingUpdateSchema>
+
+export function validateListingUpdate(
+  existing: { type: ListingFormData["type"]; period: string | null },
+  update: ListingUpdateData,
+) {
+  const updatedType = update.type ?? existing.type
+  const updatedPeriod = update.period ?? existing.period
+
+  if (updatedType === "sale") {
+    if (updatedPeriod) {
+      return "Period should not be set for sale listings"
+    }
+    return null
+  }
+
+  if (!updatedPeriod) {
+    return "Period is required for rent and short-let listings"
+  }
+
+  if (updatedType === "short_let" && updatedPeriod !== "night") {
+    return "Short-let listings must be per night"
+  }
+
+  if (updatedType === "rent" && !["month", "year"].includes(updatedPeriod)) {
+    return "Rent listings must be per month or year"
+  }
+
+  return null
+}
+
 export const listingStep1Schema = listingFormBaseSchema.pick({
   title: true,
   type: true,

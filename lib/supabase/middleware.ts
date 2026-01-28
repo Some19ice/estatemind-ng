@@ -52,7 +52,10 @@ export async function updateSession(request: NextRequest) {
   if (isAuthRoute && user) {
     // Redirect to dashboard if already logged in
     const url = request.nextUrl.clone();
-    url.pathname = '/dashboard';
+    const redirectPath = request.nextUrl.searchParams.get('redirect');
+    const safeRedirect =
+      redirectPath && redirectPath.startsWith('/') ? redirectPath : null;
+    url.pathname = safeRedirect ?? '/dashboard';
     return NextResponse.redirect(url);
   }
 

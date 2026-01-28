@@ -91,8 +91,8 @@ profiles: id, email, full_name, avatar_url, role (seeker/agent/admin), is_verifi
 -- Properties
 properties: id, owner_id, title, description, price, currency, period, type (rent/sale/short_let),
             status (draft/pending/active/sold/leased), address, area, city, state,
-            bedrooms, bathrooms, toilets, parking, images[], video_url, is_verified_listing,
-            created_at, updated_at
+            bedrooms, bathrooms, toilets, parking, images[] (currently external URLs or placeholder/empty values from seed data; no upload flow yet),
+            video_url, is_verified_listing, created_at, updated_at
 
 -- Features (Many-to-Many)
 features: id, name
@@ -153,7 +153,7 @@ property_features: property_id, feature_id
 - [x] Loading States & Error Handling
 
 ### Phase 5: Future Enhancements
-- [ ] Image Upload to Supabase Storage
+- [ ] Image Upload to Supabase Storage (not implemented; images[] currently populated with external URLs or placeholder/empty values from seed data)
 - [ ] Video Upload for TrueVerify
 - [ ] Agent KYC Verification
 - [ ] Property Search with Filters

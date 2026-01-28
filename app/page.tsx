@@ -20,7 +20,7 @@ export default function Home() {
       <nav className="fixed w-full bg-white/80 backdrop-blur-md z-50 border-b border-slate-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16 items-center">
-            <div className="flex-shrink-0 flex items-center gap-2">
+            <div className="shrink-0 flex items-center gap-2">
               <div className="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center">
                 <Building className="w-5 h-5 text-white" />
               </div>
@@ -53,6 +53,8 @@ export default function Home() {
               {/* Mobile menu button */}
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+                aria-expanded={mobileMenuOpen}
                 className="md:hidden p-2 text-slate-600 hover:text-emerald-600 transition-colors"
               >
                 {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -98,7 +100,7 @@ export default function Home() {
       {/* Hero Section */}
       <section className="relative pt-32 pb-20 lg:pt-48 lg:pb-32 overflow-hidden">
         <div className="absolute inset-0 z-0">
-          <div className="absolute inset-0 bg-gradient-to-br from-emerald-50 to-slate-100 opacity-80"></div>
+          <div className="absolute inset-0 bg-linear-to-br from-emerald-50 to-slate-100 opacity-80"></div>
         </div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
@@ -119,7 +121,7 @@ export default function Home() {
             {/* Search Interface Mockup */}
             <div className="bg-white p-4 rounded-2xl shadow-xl border border-slate-200 max-w-2xl mx-auto transform hover:scale-[1.01] transition-transform duration-300">
               <div className="flex flex-col md:flex-row gap-3">
-                <div className="flex-grow relative">
+                <div className="grow relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <MessageSquare className="h-5 w-5 text-slate-400" />
                   </div>

@@ -51,7 +51,8 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
 
   // Filter by city if specified
   if (params.city) {
-    query = query.ilike('city', `%${params.city}%`);
+    const escapedCity = params.city.replace(/[%_\\]/g, '\\$&');
+    query = query.ilike('city', `%${escapedCity}%`);
   }
 
   const { data: properties, error } = await query.limit(20);
@@ -100,7 +101,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
         {/* Quick Filter Pills */}
         <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
           <Link
-            href="/search"
+            href={{ pathname: '/search', query: { ...params, type: undefined } }}
             className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
               !params.type ? 'bg-emerald-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-100'
             }`}
@@ -108,7 +109,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
             All
           </Link>
           <Link
-            href="/search?type=rent"
+            href={{ pathname: '/search', query: { ...params, type: 'rent' } }}
             className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
               params.type === 'rent' ? 'bg-emerald-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-100'
             }`}
@@ -116,7 +117,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
             For Rent
           </Link>
           <Link
-            href="/search?type=sale"
+            href={{ pathname: '/search', query: { ...params, type: 'sale' } }}
             className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
               params.type === 'sale' ? 'bg-emerald-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-100'
             }`}
@@ -124,7 +125,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
             For Sale
           </Link>
           <Link
-            href="/search?type=short_let"
+            href={{ pathname: '/search', query: { ...params, type: 'short_let' } }}
             className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
               params.type === 'short_let' ? 'bg-emerald-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-100'
             }`}

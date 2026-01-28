@@ -52,7 +52,10 @@ export interface Database {
     Tables: {
       profiles: {
         Row: Profile;
-        Insert: Omit<Profile, 'created_at'> & { created_at?: string };
+        Insert: Omit<Profile, 'id' | 'created_at'> & {
+          id?: string;
+          created_at?: string;
+        };
         Update: Partial<Omit<Profile, 'id'>>;
       };
       properties: {

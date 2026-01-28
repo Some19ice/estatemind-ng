@@ -1,6 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
-import { TrendingUp, Users, Home, Eye, ArrowUpRight } from 'lucide-react';
+import { TrendingUp, Users, Home, Eye } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
 
 export default async function DashboardOverview() {
@@ -58,12 +58,7 @@ export default async function DashboardOverview() {
               >
                 <stat.icon className="w-5 h-5" />
               </div>
-              {stat.value !== '0' && stat.value !== '--' && (
-                <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full flex items-center gap-1">
-                  <ArrowUpRight className="w-3 h-3" />
-                  +12%
-                </span>
-              )}
+              
             </div>
             <div className="text-2xl font-bold text-slate-900">{stat.value}</div>
             <div className="text-sm text-slate-500 font-medium">{stat.label}</div>

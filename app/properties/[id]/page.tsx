@@ -116,7 +116,9 @@ export default async function PropertyDetails({ params }: { params: Promise<{ id
                   <h1 className="text-3xl font-bold text-slate-900 mb-2">{property.title}</h1>
                   <div className="flex items-center text-slate-500 mb-4">
                     <MapPin className="w-5 h-5 mr-2 text-emerald-600" />
-                    {property.address}, {property.area && `${property.area}, `}{property.city}, {property.state}
+                    {[property.address, property.area, property.city, property.state]
+                      .filter(Boolean)
+                      .join(', ')}
                   </div>
                 </div>
                 <div className="text-right">
