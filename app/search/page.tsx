@@ -100,7 +100,7 @@ export default function SearchPage() {
                     </div>
                   </div>
                   {property.agent.verified && (
-                     <CheckCircle className="w-5 h-5 text-emerald-500" title="Verified Agent" />
+                     <CheckCircle className="w-5 h-5 text-emerald-500" aria-label="Verified Agent" />
                   )}
                 </div>
               </div>

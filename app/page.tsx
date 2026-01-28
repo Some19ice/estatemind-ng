@@ -1,8 +1,19 @@
-import React from 'react';
-import { Search, MapPin, ShieldCheck, MessageSquare, ArrowRight, Menu, X, Building, Key, Star } from 'lucide-react';
+'use client';
+
+import React, { useState } from 'react';
+import { Search, MapPin, ShieldCheck, MessageSquare, Building, Star, Menu, X } from 'lucide-react';
 import Link from 'next/link';
 
+const NAV_LINKS = [
+  { label: 'Rent', href: '/search?type=rent' },
+  { label: 'Buy', href: '/search?type=sale' },
+  { label: 'Short-let', href: '/search?type=short_let' },
+  { label: 'Agents', href: '#' },
+];
+
 export default function Home() {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
   return (
     <div className="min-h-screen bg-slate-50 font-sans text-slate-900">
       {/* Navigation */}
@@ -16,26 +27,78 @@ export default function Home() {
               <span className="font-bold text-xl tracking-tight text-emerald-950">EstateMind</span>
             </div>
             <div className="hidden md:flex items-center space-x-8">
-              <Link href="#" className="text-slate-600 hover:text-emerald-600 font-medium transition-colors">Rent</Link>
-              <Link href="#" className="text-slate-600 hover:text-emerald-600 font-medium transition-colors">Buy</Link>
-              <Link href="#" className="text-slate-600 hover:text-emerald-600 font-medium transition-colors">Short-let</Link>
-              <Link href="#" className="text-slate-600 hover:text-emerald-600 font-medium transition-colors">Agents</Link>
+              {NAV_LINKS.map((link) => (
+                <Link
+                  key={link.label}
+                  href={link.href}
+                  className="text-slate-600 hover:text-emerald-600 font-medium transition-colors"
+                >
+                  {link.label}
+                </Link>
+              ))}
             </div>
             <div className="flex items-center gap-4">
-              <button className="hidden md:block text-emerald-600 font-semibold hover:text-emerald-700">Login</button>
-              <button className="bg-emerald-600 text-white px-5 py-2 rounded-full font-medium hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-600/20">
+              <Link
+                href="/login"
+                className="hidden md:block text-emerald-600 font-semibold hover:text-emerald-700"
+              >
+                Login
+              </Link>
+              <Link
+                href="/signup"
+                className="hidden sm:block bg-emerald-600 text-white px-5 py-2 rounded-full font-medium hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-600/20"
+              >
                 Get Started
+              </Link>
+              {/* Mobile menu button */}
+              <button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="md:hidden p-2 text-slate-600 hover:text-emerald-600 transition-colors"
+              >
+                {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
               </button>
             </div>
           </div>
         </div>
+
+        {/* Mobile menu drawer */}
+        {mobileMenuOpen && (
+          <div className="md:hidden bg-white border-t border-slate-200 shadow-lg">
+            <div className="px-4 py-4 space-y-2">
+              {NAV_LINKS.map((link) => (
+                <Link
+                  key={link.label}
+                  href={link.href}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block px-4 py-3 text-slate-600 hover:bg-emerald-50 hover:text-emerald-600 rounded-xl font-medium transition-colors"
+                >
+                  {link.label}
+                </Link>
+              ))}
+              <hr className="my-2 border-slate-200" />
+              <Link
+                href="/login"
+                onClick={() => setMobileMenuOpen(false)}
+                className="block px-4 py-3 text-emerald-600 hover:bg-emerald-50 rounded-xl font-semibold transition-colors"
+              >
+                Login
+              </Link>
+              <Link
+                href="/signup"
+                onClick={() => setMobileMenuOpen(false)}
+                className="block px-4 py-3 bg-emerald-600 text-white text-center rounded-xl font-semibold hover:bg-emerald-700 transition-colors"
+              >
+                Get Started
+              </Link>
+            </div>
+          </div>
+        )}
       </nav>
 
       {/* Hero Section */}
       <section className="relative pt-32 pb-20 lg:pt-48 lg:pb-32 overflow-hidden">
         <div className="absolute inset-0 z-0">
           <div className="absolute inset-0 bg-gradient-to-br from-emerald-50 to-slate-100 opacity-80"></div>
-          {/* Abstract blobs/shapes could go here */}
         </div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
@@ -45,12 +108,12 @@ export default function Home() {
               <span>The #1 AI Real Estate Agent in Nigeria</span>
             </div>
             <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight text-slate-900 mb-6 leading-tight">
-              Don't just search. <br/>
+              Don&apos;t just search. <br />
               <span className="text-emerald-600">Instruct.</span>
             </h1>
             <p className="text-lg md:text-xl text-slate-600 mb-10 max-w-2xl mx-auto leading-relaxed">
-              Find your dream home in Lagos, Abuja, or PH without the stress. 
-              Chat with our AI agent to find verified listings, schedule inspections, and negotiate deals.
+              Find your dream home in Lagos, Abuja, or PH without the stress. Chat with our AI
+              agent to find verified listings, schedule inspections, and negotiate deals.
             </p>
 
             {/* Search Interface Mockup */}
@@ -72,11 +135,16 @@ export default function Home() {
                 </button>
               </div>
               <div className="mt-3 flex gap-2 overflow-x-auto pb-2 md:pb-0 no-scrollbar">
-                {['Lekki Phase 1', 'Ikoyi', 'Victoria Island', 'Ikeja GRA', 'Maitama'].map((tag) => (
-                  <button key={tag} className="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-medium rounded-full whitespace-nowrap transition-colors">
-                    {tag}
-                  </button>
-                ))}
+                {['Lekki Phase 1', 'Ikoyi', 'Victoria Island', 'Ikeja GRA', 'Maitama'].map(
+                  (tag) => (
+                    <button
+                      key={tag}
+                      className="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-medium rounded-full whitespace-nowrap transition-colors"
+                    >
+                      {tag}
+                    </button>
+                  )
+                )}
               </div>
             </div>
           </div>
@@ -95,7 +163,9 @@ export default function Home() {
             ].map((stat, i) => (
               <div key={i}>
                 <div className="text-3xl font-bold text-emerald-900 mb-1">{stat.value}</div>
-                <div className="text-sm text-slate-500 font-medium uppercase tracking-wider">{stat.label}</div>
+                <div className="text-sm text-slate-500 font-medium uppercase tracking-wider">
+                  {stat.label}
+                </div>
               </div>
             ))}
           </div>
@@ -106,8 +176,13 @@ export default function Home() {
       <section className="py-24 bg-slate-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto mb-16">
-            <h2 className="text-3xl font-bold text-slate-900 mb-4">Why Nigeria Trusts EstateMind</h2>
-            <p className="text-slate-600 text-lg">We've rebuilt the house hunting experience from the ground up to solve the unique challenges of the Nigerian market.</p>
+            <h2 className="text-3xl font-bold text-slate-900 mb-4">
+              Why Nigeria Trusts EstateMind
+            </h2>
+            <p className="text-slate-600 text-lg">
+              We&apos;ve rebuilt the house hunting experience from the ground up to solve the
+              unique challenges of the Nigerian market.
+            </p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
@@ -116,9 +191,10 @@ export default function Home() {
               <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mb-6">
                 <ShieldCheck className="w-6 h-6 text-blue-600" />
               </div>
-              <h3 className="text-xl font-bold text-slate-900 mb-3">TrueVerify™ Listings</h3>
+              <h3 className="text-xl font-bold text-slate-900 mb-3">TrueVerify Listings</h3>
               <p className="text-slate-600 leading-relaxed">
-                No more "inspection fees" for properties that don't exist. Every listing is verified via video walkthroughs and agent KYC.
+                No more &quot;inspection fees&quot; for properties that don&apos;t exist. Every
+                listing is verified via video walkthroughs and agent KYC.
               </p>
             </div>
 
@@ -129,7 +205,8 @@ export default function Home() {
               </div>
               <h3 className="text-xl font-bold text-slate-900 mb-3">AI Personal Broker</h3>
               <p className="text-slate-600 leading-relaxed">
-                Chat with "Chinedu" (our AI) to negotiate prices, check tenancy laws, and schedule viewings instantly.
+                Chat with &quot;Chinedu&quot; (our AI) to negotiate prices, check tenancy laws, and
+                schedule viewings instantly.
               </p>
             </div>
 
@@ -140,7 +217,8 @@ export default function Home() {
               </div>
               <h3 className="text-xl font-bold text-slate-900 mb-3">Local Intelligence</h3>
               <p className="text-slate-600 leading-relaxed">
-                Know before you go. Get real data on power stability, flood risks, and traffic patterns for every neighborhood.
+                Know before you go. Get real data on power stability, flood risks, and traffic
+                patterns for every neighborhood.
               </p>
             </div>
           </div>
@@ -151,20 +229,28 @@ export default function Home() {
       <section className="py-20 bg-emerald-900 relative overflow-hidden">
         <div className="absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 bg-emerald-800 rounded-full opacity-50 blur-3xl"></div>
         <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-96 h-96 bg-emerald-950 rounded-full opacity-50 blur-3xl"></div>
-        
+
         <div className="max-w-4xl mx-auto px-4 text-center relative z-10">
-          <h2 className="text-3xl md:text-5xl font-bold text-white mb-6">Ready to find your next place?</h2>
+          <h2 className="text-3xl md:text-5xl font-bold text-white mb-6">
+            Ready to find your next place?
+          </h2>
           <p className="text-emerald-100 text-lg mb-10 max-w-2xl mx-auto">
-            Join thousands of Nigerians who have found their perfect home with EstateMind. 
-            No stress. No scams. Just results.
+            Join thousands of Nigerians who have found their perfect home with EstateMind. No
+            stress. No scams. Just results.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button className="bg-white text-emerald-900 px-8 py-4 rounded-xl font-bold hover:bg-emerald-50 transition-colors">
+            <Link
+              href="/search"
+              className="bg-white text-emerald-900 px-8 py-4 rounded-xl font-bold hover:bg-emerald-50 transition-colors"
+            >
               Start Searching Now
-            </button>
-            <button className="bg-transparent border-2 border-emerald-700 text-white px-8 py-4 rounded-xl font-bold hover:bg-emerald-800 transition-colors">
+            </Link>
+            <Link
+              href="/signup"
+              className="bg-transparent border-2 border-emerald-700 text-white px-8 py-4 rounded-xl font-bold hover:bg-emerald-800 transition-colors"
+            >
               List Your Property
-            </button>
+            </Link>
           </div>
         </div>
       </section>
@@ -181,30 +267,63 @@ export default function Home() {
                 <span className="font-bold text-lg text-white">EstateMind</span>
               </div>
               <p className="text-sm leading-relaxed">
-                The first agentic real estate marketplace for Nigeria. Driven by AI, built on trust.
+                The first agentic real estate marketplace for Nigeria. Driven by AI, built on
+                trust.
               </p>
             </div>
             <div>
               <h4 className="text-white font-semibold mb-4">Platform</h4>
               <ul className="space-y-2 text-sm">
-                <li><Link href="#" className="hover:text-emerald-500">For Renters</Link></li>
-                <li><Link href="#" className="hover:text-emerald-500">For Agents</Link></li>
-                <li><Link href="#" className="hover:text-emerald-500">Pricing</Link></li>
+                <li>
+                  <Link href="#" className="hover:text-emerald-500">
+                    For Renters
+                  </Link>
+                </li>
+                <li>
+                  <Link href="#" className="hover:text-emerald-500">
+                    For Agents
+                  </Link>
+                </li>
+                <li>
+                  <Link href="#" className="hover:text-emerald-500">
+                    Pricing
+                  </Link>
+                </li>
               </ul>
             </div>
             <div>
               <h4 className="text-white font-semibold mb-4">Company</h4>
               <ul className="space-y-2 text-sm">
-                <li><Link href="#" className="hover:text-emerald-500">About Us</Link></li>
-                <li><Link href="#" className="hover:text-emerald-500">Careers</Link></li>
-                <li><Link href="#" className="hover:text-emerald-500">Contact</Link></li>
+                <li>
+                  <Link href="#" className="hover:text-emerald-500">
+                    About Us
+                  </Link>
+                </li>
+                <li>
+                  <Link href="#" className="hover:text-emerald-500">
+                    Careers
+                  </Link>
+                </li>
+                <li>
+                  <Link href="#" className="hover:text-emerald-500">
+                    Contact
+                  </Link>
+                </li>
               </ul>
             </div>
             <div>
               <h4 className="text-white font-semibold mb-4">Legal</h4>
               <ul className="space-y-2 text-sm">
-                <li><Link href="#" className="hover:text-emerald-500">Privacy Policy</Link></li>
-                <li><Link href="#" className="hover:text-emerald-500">Terms of Service</Link></li>
+                <li>
+                  <Link href="#" className="hover:text-emerald-500">
+                    Privacy Policy
+                  </Link>
+                </li>
+                <li>
+                  <Link href="#" className="hover:text-emerald-500">
+                    Terms of Service
+                  </Link>
+                </li>
               </ul>
             </div>
           </div>
