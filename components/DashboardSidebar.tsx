@@ -22,28 +22,25 @@ const MENU_ITEMS = [
   { label: 'Settings', icon: Settings, href: '/dashboard/settings' },
 ];
 
-interface DashboardSidebarProps {
-  user: {
-    email: string | null;
-    fullName: string | null;
-    role: string | null;
-  };
+interface SidebarContentProps {
+  user: DashboardSidebarProps['user'];
+  pathname: string;
+  displayName: string;
+  roleDisplay: string;
+  signingOut: boolean;
+  onSignOut: () => Promise<void>;
+  onNavigate: () => void;
 }
 
-export default function DashboardSidebar({ user }: DashboardSidebarProps) {
-  const pathname = usePathname();
-  const router = useRouter();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [signingOut, setSigningOut] = useState(false);
-
-  const handleSignOut = async () => {
-    setSigningOut(true);
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    router.push('/');
-    router.refresh();
-  };
-
+function SidebarContent({
+  user,
+  pathname,
+  displayName,
+  roleDisplay,
+  signingOut,
+  onSignOut,
+  onNavigate,
+}: SidebarContentProps) {
   const getInitials = (name: string | null, email: string | null) => {
     if (name) {
       return name
@@ -59,10 +56,7 @@ export default function DashboardSidebar({ user }: DashboardSidebarProps) {
     return 'U';
   };
 
-  const displayName = user.fullName || user.email?.split('@')[0] || 'User';
-  const roleDisplay = user.role === 'agent' ? 'Agent' : 'Property Seeker';
-
-  const SidebarContent = () => (
+  return (
     <>
       <div className="p-6 border-b border-slate-800">
         <Link href="/" className="flex items-center gap-2">
@@ -89,7 +83,7 @@ export default function DashboardSidebar({ user }: DashboardSidebarProps) {
             <Link
               key={item.href}
               href={item.href}
-              onClick={() => setMobileMenuOpen(false)}
+              onClick={onNavigate}
               className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-medium ${
                 isActive
                   ? 'bg-emerald-600 text-white'
@@ -105,7 +99,7 @@ export default function DashboardSidebar({ user }: DashboardSidebarProps) {
 
       <div className="p-4 border-t border-slate-800">
         <button
-          onClick={handleSignOut}
+          onClick={onSignOut}
           disabled={signingOut}
           className="flex items-center gap-3 px-4 py-3 w-full text-slate-400 hover:text-red-400 transition-colors font-medium disabled:opacity-50"
         >
@@ -115,6 +109,32 @@ export default function DashboardSidebar({ user }: DashboardSidebarProps) {
       </div>
     </>
   );
+}
+
+interface DashboardSidebarProps {
+  user: {
+    email: string | null;
+    fullName: string | null;
+    role: string | null;
+  };
+}
+
+export default function DashboardSidebar({ user }: DashboardSidebarProps) {
+  const pathname = usePathname();
+  const router = useRouter();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
+
+  const handleSignOut = async () => {
+    setSigningOut(true);
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push('/');
+    router.refresh();
+  };
+
+  const displayName = user.fullName || user.email?.split('@')[0] || 'User';
+  const roleDisplay = user.role === 'agent' ? 'Agent' : 'Property Seeker';
 
   return (
     <>
@@ -146,12 +166,28 @@ export default function DashboardSidebar({ user }: DashboardSidebarProps) {
         >
           <X className="w-6 h-6" />
         </button>
-        <SidebarContent />
+        <SidebarContent
+          user={user}
+          pathname={pathname}
+          displayName={displayName}
+          roleDisplay={roleDisplay}
+          signingOut={signingOut}
+          onSignOut={handleSignOut}
+          onNavigate={() => setMobileMenuOpen(false)}
+        />
       </aside>
 
       {/* Desktop sidebar */}
       <aside className="w-64 bg-slate-900 text-white hidden md:flex flex-col fixed h-full">
-        <SidebarContent />
+        <SidebarContent
+          user={user}
+          pathname={pathname}
+          displayName={displayName}
+          roleDisplay={roleDisplay}
+          signingOut={signingOut}
+          onSignOut={handleSignOut}
+          onNavigate={() => undefined}
+        />
       </aside>
     </>
   );

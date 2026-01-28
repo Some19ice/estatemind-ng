@@ -8,19 +8,23 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { listingStep1Schema, type ListingStep1Data } from '@/lib/validations/listing';
 import { createClient } from '@/lib/supabase/client';
+import { NIGERIAN_STATES, getCitiesForState } from '@/lib/data/locations';
 
 export default function NewListingPage() {
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [selectedState, setSelectedState] = useState('Lagos');
+  const [cities, setCities] = useState<string[]>(getCitiesForState('Lagos'));
 
   const {
     register,
     handleSubmit,
     formState: { errors },
     trigger,
-    getValues,
+    watch,
+    setValue,
   } = useForm<ListingStep1Data>({
     resolver: zodResolver(listingStep1Schema),
     defaultValues: {
@@ -29,8 +33,23 @@ export default function NewListingPage() {
       bathrooms: 0,
       toilets: 0,
       parking: 0,
+      state: 'Lagos',
+      city: 'Lekki',
+      period: 'year',
     },
   });
+
+  // eslint-disable-next-line react-hooks/incompatible-library
+  const propertyType = watch('type');
+
+  const handleStateChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newState = e.target.value;
+    setSelectedState(newState);
+    const newCities = getCitiesForState(newState);
+    setCities(newCities);
+    setValue('state', newState);
+    setValue('city', newCities[0] || '');
+  };
 
   const handleNextStep = async () => {
     const isValid = await trigger();
@@ -56,20 +75,30 @@ export default function NewListingPage() {
         return;
       }
 
+      // Determine period based on type
+      let period = data.period;
+      if (data.type === 'sale') {
+        period = undefined;
+      } else if (data.type === 'short_let') {
+        period = 'night';
+      }
+
       const { error } = await supabase.from('properties').insert({
         owner_id: user.id,
         title: data.title,
         description: data.description,
         price: data.price,
         type: data.type,
+        period: period,
         address: data.address,
+        area: data.area || null,
+        city: data.city,
+        state: data.state,
         bedrooms: data.bedrooms,
         bathrooms: data.bathrooms,
         toilets: data.toilets,
         parking: data.parking,
         status: 'pending',
-        city: 'Lagos',
-        state: 'Lagos',
         currency: 'NGN',
       });
 
@@ -185,20 +214,99 @@ export default function NewListingPage() {
                 />
                 <ErrorMessage message={errors.price?.message} />
               </div>
-              <div>
-                <label className="block text-sm font-bold text-slate-700 mb-2">
-                  Location <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <MapPin className="absolute left-3 top-3.5 w-5 h-5 text-slate-400" />
+              {propertyType !== 'sale' && (
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">
+                    Price Period <span className="text-red-500">*</span>
+                  </label>
+                  <select {...register('period')} className={inputClass(!!errors.period)}>
+                    {propertyType === 'short_let' ? (
+                      <option value="night">Per Night</option>
+                    ) : (
+                      <>
+                        <option value="year">Per Year</option>
+                        <option value="month">Per Month</option>
+                      </>
+                    )}
+                  </select>
+                  <ErrorMessage message={errors.period?.message} />
+                </div>
+              )}
+            </div>
+
+            {/* Location Section */}
+            <div className="border-t border-slate-100 pt-6">
+              <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                <MapPin className="w-5 h-5 text-emerald-600" />
+                Location
+              </h3>
+              <div className="grid md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">
+                    State <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={selectedState}
+                    onChange={handleStateChange}
+                    className={inputClass(!!errors.state)}
+                  >
+                    {NIGERIAN_STATES.map((state) => (
+                      <option key={state} value={state}>
+                        {state}
+                      </option>
+                    ))}
+                  </select>
+                  <input type="hidden" {...register('state')} />
+                  <ErrorMessage message={errors.state?.message} />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">
+                    City/Area <span className="text-red-500">*</span>
+                  </label>
+                  {cities.length > 0 ? (
+                    <select {...register('city')} className={inputClass(!!errors.city)}>
+                      {cities.map((city) => (
+                        <option key={city} value={city}>
+                          {city}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input
+                      type="text"
+                      {...register('city')}
+                      className={inputClass(!!errors.city)}
+                      placeholder="Enter city"
+                    />
+                  )}
+                  <ErrorMessage message={errors.city?.message} />
+                </div>
+              </div>
+              <div className="grid md:grid-cols-2 gap-6 mt-4">
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">
+                    Specific Area/Estate
+                  </label>
+                  <input
+                    type="text"
+                    {...register('area')}
+                    className={inputClass(!!errors.area)}
+                    placeholder="e.g. Lekki Phase 1, Banana Island"
+                  />
+                  <ErrorMessage message={errors.area?.message} />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">
+                    Street Address <span className="text-red-500">*</span>
+                  </label>
                   <input
                     type="text"
                     {...register('address')}
-                    className={`${inputClass(!!errors.address)} pl-10`}
-                    placeholder="Address / Area"
+                    className={inputClass(!!errors.address)}
+                    placeholder="e.g. 15 Admiralty Way"
                   />
+                  <ErrorMessage message={errors.address?.message} />
                 </div>
-                <ErrorMessage message={errors.address?.message} />
               </div>
             </div>
 
@@ -249,14 +357,14 @@ export default function NewListingPage() {
               <div className="border-2 border-dashed border-slate-300 rounded-2xl p-10 text-center hover:bg-slate-50 transition-colors cursor-pointer">
                 <Upload className="w-10 h-10 text-slate-400 mx-auto mb-4" />
                 <p className="font-medium text-slate-600">Click to upload or drag and drop</p>
-                <p className="text-sm text-slate-400 mt-2">JPG, PNG up to 5MB</p>
+                <p className="text-sm text-slate-400 mt-2">JPG, PNG up to 5MB (Coming soon)</p>
               </div>
             </div>
 
             {/* TrueVerify Video Section */}
             <div className="bg-emerald-50 border border-emerald-100 p-6 rounded-2xl">
               <div className="flex items-start gap-4">
-                <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center flex-shrink-0">
+                <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center shrink-0">
                   <Video className="w-6 h-6 text-emerald-600" />
                 </div>
                 <div>
@@ -271,7 +379,7 @@ export default function NewListingPage() {
                     type="button"
                     className="px-5 py-2 bg-emerald-600 text-white text-sm font-bold rounded-lg hover:bg-emerald-700 transition-colors"
                   >
-                    Upload Walkthrough
+                    Upload Walkthrough (Coming soon)
                   </button>
                 </div>
               </div>
