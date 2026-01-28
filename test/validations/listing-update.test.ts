@@ -28,4 +28,13 @@ describe("validateListingUpdate", () => {
 
     expect(error).toBe("Period should not be set for sale listings")
   })
+
+  it("allows clearing period when switching to sale", () => {
+    const error = validateListingUpdate(
+      { type: "rent", period: "month" },
+      { type: "sale", period: undefined },
+    )
+
+    expect(error).toBeNull()
+  })
 })

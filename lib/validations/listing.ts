@@ -77,7 +77,10 @@ export function validateListingUpdate(
   update: ListingUpdateData,
 ) {
   const updatedType = update.type ?? existing.type
-  const updatedPeriod = update.period ?? existing.period
+  const updatedPeriod =
+    Object.prototype.hasOwnProperty.call(update, "period")
+      ? update.period ?? null
+      : existing.period
 
   if (updatedType === "sale") {
     if (updatedPeriod) {
