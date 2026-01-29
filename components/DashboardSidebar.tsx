@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard,
@@ -9,7 +10,6 @@ import {
   MessageSquare,
   Settings,
   LogOut,
-  Building,
   Menu,
   X,
 } from 'lucide-react';
@@ -63,10 +63,13 @@ function SidebarContent({
     <>
       <div className="p-6 border-b border-slate-800">
         <Link href="/" className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center">
-            <Building className="w-5 h-5 text-white" />
-          </div>
-          <span className="font-bold text-xl tracking-tight text-white">EstateMind</span>
+          <Image
+            src="/images/logo.png"
+            alt="EstateMind Logo"
+            width={140}
+            height={36}
+            className="h-9 w-auto brightness-0 invert"
+          />
         </Link>
         <div className="mt-4 px-3 py-2 bg-slate-800 rounded-lg flex items-center gap-3">
           <div className="w-8 h-8 rounded-full bg-emerald-500 flex items-center justify-center font-bold text-sm text-white">

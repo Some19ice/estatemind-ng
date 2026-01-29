@@ -121,7 +121,7 @@ export default function EditListingPage({ params }: EditListingPageProps) {
         type: data.type,
         period: period,
         address: data.address,
-        area: data.area || null,
+        area: data.area || undefined,
         city: data.city,
         state: data.state,
         bedrooms: data.bedrooms,

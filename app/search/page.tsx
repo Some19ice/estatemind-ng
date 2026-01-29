@@ -174,9 +174,17 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                         sizes="(max-width: 1024px) 100vw, 33vw"
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <Home className="w-16 h-16 text-slate-300" />
-                      </div>
+                      <Image
+                        src={
+                          property.type === 'short_let'
+                            ? '/images/apartment.png'
+                            : '/images/house.png'
+                        }
+                        alt={property.title}
+                        fill
+                        className="object-cover group-hover:scale-105 transition-transform duration-500"
+                        sizes="(max-width: 1024px) 100vw, 33vw"
+                      />
                     )}
                     <div className="absolute top-4 left-4 flex gap-2">
                       <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${getTypeBadgeColor(property.type)}`}>

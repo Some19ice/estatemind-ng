@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Search, MapPin, ShieldCheck, MessageSquare, Building, Star, Menu, X } from 'lucide-react';
+import { Search, MapPin, ShieldCheck, MessageSquare, Star, Menu, X } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 const NAV_LINKS = [
   { label: 'Rent', href: '/search?type=rent' },
@@ -20,12 +21,16 @@ export default function Home() {
       <nav className="fixed w-full bg-white/80 backdrop-blur-md z-50 border-b border-slate-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16 items-center">
-            <div className="shrink-0 flex items-center gap-2">
-              <div className="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center">
-                <Building className="w-5 h-5 text-white" />
-              </div>
-              <span className="font-bold text-xl tracking-tight text-emerald-950">EstateMind</span>
-            </div>
+            <Link href="/" className="shrink-0 flex items-center gap-2">
+              <Image
+                src="/images/logo.png"
+                alt="EstateMind Logo"
+                width={140}
+                height={36}
+                className="h-9 w-auto"
+                priority
+              />
+            </Link>
             <div className="hidden md:flex items-center space-x-8">
               {NAV_LINKS.map((link) => (
                 <Link
@@ -100,7 +105,14 @@ export default function Home() {
       {/* Hero Section */}
       <section className="relative pt-32 pb-20 lg:pt-48 lg:pb-32 overflow-hidden">
         <div className="absolute inset-0 z-0">
-          <div className="absolute inset-0 bg-linear-to-br from-emerald-50 to-slate-100 opacity-80"></div>
+          <Image
+            src="/images/hero-banner.png"
+            alt="Nigerian cityscape"
+            fill
+            className="object-cover opacity-20"
+            priority
+          />
+          <div className="absolute inset-0 bg-gradient-to-br from-emerald-50/90 to-slate-100/90"></div>
         </div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
@@ -263,10 +275,13 @@ export default function Home() {
           <div className="grid md:grid-cols-4 gap-8">
             <div className="col-span-1 md:col-span-1">
               <div className="flex items-center gap-2 mb-4">
-                <div className="w-6 h-6 bg-emerald-600 rounded flex items-center justify-center">
-                  <Building className="w-4 h-4 text-white" />
-                </div>
-                <span className="font-bold text-lg text-white">EstateMind</span>
+                <Image
+                  src="/images/logo.png"
+                  alt="EstateMind Logo"
+                  width={120}
+                  height={32}
+                  className="h-8 w-auto brightness-0 invert"
+                />
               </div>
               <p className="text-sm leading-relaxed">
                 The first agentic real estate marketplace for Nigeria. Driven by AI, built on
