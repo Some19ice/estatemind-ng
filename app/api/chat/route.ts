@@ -59,7 +59,11 @@ export async function POST(req: Request) {
     const MAX_CONTENT_LENGTH = 4000
     const allowedRoles = new Set(["user", "assistant", "system"])
 
-    if (!Array.isArray(messages) || messages.length > MAX_MESSAGES) {
+    if (
+      !Array.isArray(messages) ||
+      messages.length < 1 ||
+      messages.length > MAX_MESSAGES
+    ) {
       return new Response(
         JSON.stringify({ error: "Invalid messages payload." }),
         {

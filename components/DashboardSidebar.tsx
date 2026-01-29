@@ -140,7 +140,13 @@ export default function DashboardSidebar({ user }: DashboardSidebarProps) {
     setSignOutError(null);
     try {
       const supabase = createClient();
-      await supabase.auth.signOut();
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error(error);
+        setSigningOut(false);
+        setSignOutError(error.message || 'Sign out failed. Please try again.');
+        return;
+      }
       router.push('/');
       router.refresh();
     } catch (err) {
