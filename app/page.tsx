@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Search, MapPin, ShieldCheck, MessageSquare, Star, Menu, X, Sparkles, ArrowRight } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { MapPin, ShieldCheck, MessageSquare, Menu, X, Sparkles, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 
@@ -9,7 +10,7 @@ const NAV_LINKS = [
   { label: 'Rent', href: '/search?type=rent' },
   { label: 'Buy', href: '/search?type=sale' },
   { label: 'Short-let', href: '/search?type=short_let' },
-  { label: 'AI Agent', href: '#' },
+  { label: 'AI Search', href: '/ai-search' },
 ];
 
 const EXAMPLE_PROMPTS = [
@@ -20,11 +21,26 @@ const EXAMPLE_PROMPTS = [
 ];
 
 export default function Home() {
+  const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [placeholderIndex, setPlaceholderIndex] = useState(0);
   const [placeholderText, setPlaceholderText] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
   const [typingSpeed, setTypingSpeed] = useState(100);
+  const [searchInput, setSearchInput] = useState("");
+
+  const handleAISearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchInput.trim()) {
+      router.push(`/ai-search?q=${encodeURIComponent(searchInput.trim())}`);
+    } else {
+      router.push('/ai-search');
+    }
+  };
+
+  const handleQuickSearch = (query: string) => {
+    router.push(`/ai-search?q=${encodeURIComponent(query)}`);
+  };
 
   // Typewriter effect logic
   useEffect(() => {
@@ -161,34 +177,44 @@ export default function Home() {
             {/* AI Command Center Input */}
             <div className="relative max-w-3xl mx-auto group">
                 <div className="absolute -inset-1 bg-gradient-to-r from-emerald-500 via-teal-400 to-indigo-500 rounded-2xl opacity-30 blur group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
-                <div className="relative bg-white rounded-2xl shadow-2xl shadow-slate-200/50 flex items-center p-2 transition-transform active:scale-[0.99]">
+                <form onSubmit={handleAISearch} className="relative bg-white rounded-2xl shadow-2xl shadow-slate-200/50 flex items-center p-2 transition-transform active:scale-[0.99]">
                   <div className="pl-4 pr-3 text-slate-400">
                     <Sparkles className="w-6 h-6 text-indigo-500 animate-pulse" />
                   </div>
                   <input
                     type="text"
+                    value={searchInput}
+                    onChange={(e) => setSearchInput(e.target.value)}
                     className="flex-1 bg-transparent border-none text-lg py-4 px-2 text-slate-900 placeholder-slate-300 focus:ring-0 outline-none"
                     placeholder={placeholderText}
                     aria-label="AI Search Prompt"
                   />
                   <div className="hidden md:flex gap-2 mr-2">
-                     <button className="p-2 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-slate-600 transition-colors" title="Voice Input">
+                     <button type="button" className="p-2 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-slate-600 transition-colors" title="Voice Input">
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="23"/><line x1="8" x2="16" y1="23" y2="23"/></svg>
                      </button>
                   </div>
-                  <button className="bg-slate-900 text-white px-8 py-3.5 rounded-xl font-semibold hover:bg-emerald-600 transition-all shadow-md flex items-center gap-2">
+                  <button type="submit" className="bg-slate-900 text-white px-8 py-3.5 rounded-xl font-semibold hover:bg-emerald-600 transition-all shadow-md flex items-center gap-2">
                     <span>Ask AI</span>
                     <ArrowRight className="w-4 h-4" />
                   </button>
-                </div>
+                </form>
             </div>
 
             {/* Quick Chips */}
             <div className="mt-8 flex flex-wrap justify-center gap-3 opacity-80">
               <span className="text-sm text-slate-500 font-medium py-1">Try asking:</span>
-              {['"2-bed in Lekki < 5M"', '"Office with 24h power"', '"Short-let with pool"'].map((tag) => (
-                 <button key={tag} className="text-sm px-3 py-1 bg-white border border-slate-200 hover:border-emerald-300 text-slate-600 rounded-full transition-colors cursor-pointer">
-                    {tag}
+              {[
+                { label: '"2-bed in Lekki < 5M"', query: '2-bedroom apartment in Lekki under 5 million naira' },
+                { label: '"Office with 24h power"', query: 'Office space with 24/7 power supply in Lagos' },
+                { label: '"Short-let with pool"', query: 'Short-let apartment with swimming pool' },
+              ].map((tag) => (
+                 <button
+                   key={tag.label}
+                   onClick={() => handleQuickSearch(tag.query)}
+                   className="text-sm px-3 py-1 bg-white border border-slate-200 hover:border-emerald-300 hover:bg-emerald-50 text-slate-600 rounded-full transition-colors cursor-pointer"
+                 >
+                    {tag.label}
                  </button>
               ))}
             </div>
@@ -261,7 +287,7 @@ export default function Home() {
           </h2>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
              <Link
-              href="/search"
+              href="/ai-search"
               className="bg-emerald-500 text-white px-10 py-4 rounded-xl font-bold hover:bg-emerald-400 transition-all shadow-lg hover:shadow-emerald-500/30"
             >
               Talk to Agent
