@@ -1,4 +1,4 @@
-import { streamText } from 'ai';
+import { streamText, convertToModelMessages, UIMessage } from 'ai';
 import { google } from '@ai-sdk/google';
 import { Redis } from "@upstash/redis"
 import { NIGERIAN_REAL_ESTATE_SYSTEM_PROMPT } from '@/lib/prompts/real-estate';
@@ -39,14 +39,6 @@ export async function POST(req: Request) {
       data: { user },
     } = await supabase.auth.getUser();
 
-    const rateKey = `ratelimit:chat:${getRateLimitKey(req, user?.id)}`
-    if (await isRateLimited(rateKey)) {
-      return new Response(
-        JSON.stringify({ error: "Too many requests. Please try again later." }),
-        { status: 429, headers: { "Content-Type": "application/json" } },
-      )
-    }
-
     if (!user) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401,
@@ -54,10 +46,16 @@ export async function POST(req: Request) {
       });
     }
 
-    const { messages } = await req.json();
+    const rateKey = `ratelimit:chat:${getRateLimitKey(req, user.id)}`
+    if (await isRateLimited(rateKey)) {
+      return new Response(
+        JSON.stringify({ error: "Too many requests. Please try again later." }),
+        { status: 429, headers: { "Content-Type": "application/json" } },
+      )
+    }
+
+    const { messages }: { messages: UIMessage[] } = await req.json();
     const MAX_MESSAGES = 50
-    const MAX_CONTENT_LENGTH = 4000
-    const allowedRoles = new Set(["user", "assistant", "system"])
 
     if (
       !Array.isArray(messages) ||
@@ -73,65 +71,13 @@ export async function POST(req: Request) {
       )
     }
 
-    const validatedMessages: Array<{
-      role: "user" | "assistant" | "system"
-      content: string
-    }> = []
-    for (const message of messages) {
-      if (!message || typeof message !== "object" || Array.isArray(message)) {
-        return new Response(
-          JSON.stringify({ error: "Invalid messages payload." }),
-          {
-            status: 400,
-            headers: { "Content-Type": "application/json" },
-          },
-        )
-      }
-
-      const { role, content } = message as { role?: unknown; content?: unknown }
-      if (typeof role !== "string" || !allowedRoles.has(role)) {
-        return new Response(
-          JSON.stringify({ error: "Invalid message role." }),
-          {
-            status: 400,
-            headers: { "Content-Type": "application/json" },
-          },
-        )
-      }
-      if (typeof content !== "string") {
-        return new Response(
-          JSON.stringify({ error: "Invalid message content." }),
-          {
-            status: 400,
-            headers: { "Content-Type": "application/json" },
-          },
-        )
-      }
-
-      const trimmedContent = content.trim()
-      if (!trimmedContent || trimmedContent.length > MAX_CONTENT_LENGTH) {
-        return new Response(
-          JSON.stringify({ error: "Invalid message content." }),
-          {
-            status: 400,
-            headers: { "Content-Type": "application/json" },
-          },
-        )
-      }
-
-      validatedMessages.push({
-        role: role as "user" | "assistant" | "system",
-        content: trimmedContent,
-      })
-    }
-
     const result = streamText({
       model: google("gemini-2.0-flash"),
       system: NIGERIAN_REAL_ESTATE_SYSTEM_PROMPT,
-      messages: validatedMessages,
+      messages: await convertToModelMessages(messages),
     })
 
-    return result.toTextStreamResponse();
+    return result.toUIMessageStreamResponse();
   } catch (error) {
     console.error('Chat API error:', error);
     return new Response(

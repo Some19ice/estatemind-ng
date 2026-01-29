@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@ai-sdk/google": "^3.0.16",
+    "@ai-sdk/react": "^3.0.61",
     "@hookform/resolvers": "^5.2.2",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.93.2",

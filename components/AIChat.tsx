@@ -3,22 +3,50 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { MessageSquare, X, Send, Sparkles, User, Bot } from 'lucide-react';
 import { useChat } from '@ai-sdk/react';
+import { DefaultChatTransport } from 'ai';
+
+interface ChatMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+}
+
+const WELCOME_MESSAGE: ChatMessage = {
+  id: 'welcome',
+  role: 'assistant',
+  content:
+    "Hello! I'm Chinedu, your personal property broker. \n\nTell me what you're looking for (e.g., \"3-bed in Lekki under 5m\") or ask me about a specific area.",
+};
 
 export default function AIChat() {
   const [isOpen, setIsOpen] = useState(false);
+  const [input, setInput] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const { messages, input, handleInputChange, handleSubmit, isLoading } = useChat({
-    api: '/api/chat',
-    initialMessages: [
-      {
-        id: 'welcome',
-        role: 'assistant',
-        content:
-          "Hello! I'm Chinedu, your personal property broker. \n\nTell me what you're looking for (e.g., \"3-bed in Lekki under 5m\") or ask me about a specific area.",
-      },
-    ],
+  const { messages: aiMessages, sendMessage, status } = useChat({
+    transport: new DefaultChatTransport({
+      api: '/api/chat',
+    }),
   });
+
+  const isLoading = status === 'streaming' || status === 'submitted';
+
+  // Combine welcome message with AI messages
+  const getMessageContent = (message: typeof aiMessages[0]) => {
+    return message.parts
+      .filter((part): part is { type: 'text'; text: string } => part.type === 'text')
+      .map((part) => part.text)
+      .join('');
+  };
+
+  const allMessages: ChatMessage[] = [
+    WELCOME_MESSAGE,
+    ...aiMessages.map((msg) => ({
+      id: msg.id,
+      role: msg.role as 'user' | 'assistant',
+      content: getMessageContent(msg),
+    })),
+  ];
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -26,12 +54,13 @@ export default function AIChat() {
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages, isOpen]);
+  }, [allMessages, isOpen]);
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
-    handleSubmit(e);
+    sendMessage({ text: input });
+    setInput('');
   };
 
   return (
@@ -75,7 +104,7 @@ export default function AIChat() {
 
           {/* Messages Area */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50">
-            {messages.map((msg) => (
+            {allMessages.map((msg) => (
               <div
                 key={msg.id}
                 className={`flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}
@@ -125,7 +154,7 @@ export default function AIChat() {
               <input
                 type="text"
                 value={input}
-                onChange={handleInputChange}
+                onChange={(e) => setInput(e.target.value)}
                 placeholder="Ask Chinedu..."
                 className="w-full pl-4 pr-12 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:bg-white focus:outline-none transition-all"
               />
