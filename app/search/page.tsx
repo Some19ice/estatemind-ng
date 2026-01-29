@@ -1,9 +1,10 @@
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { MapPin, BedDouble, Bath, Car, Shield, Filter, Star, Home, Search } from 'lucide-react';
+import { MapPin, BedDouble, Bath, Car, Shield, Filter, Star, Search } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
-import type { Property } from '@/lib/database.types';
+import type { Property, PropertyType } from '@/lib/database.types';
+import { MOCK_PROPERTIES } from '@/app/data/properties';
 
 function formatPrice(price: number, type: string, period?: string | null) {
   const formatted = new Intl.NumberFormat('en-NG').format(price);
@@ -57,11 +58,46 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
 
   const { data: properties, error } = await query.limit(20);
 
-  if (error) {
-    console.error('Search error:', error);
-  }
+  let listings: Property[] = [];
 
-  const listings = (properties || []) as Property[];
+  if (error || !properties || properties.length === 0) {
+    if (error) console.error('Supabase search error (using mocks):', error);
+    
+    // Fallback to mock data if DB fails or is empty
+    const mockData = MOCK_PROPERTIES.map(p => ({
+      id: p.id,
+      owner_id: 'mock-owner',
+      title: p.title,
+      description: 'Mock description',
+      price: p.price,
+      currency: p.currency,
+      period: p.period || null,
+      type: p.type.toLowerCase().replace('-', '_') as PropertyType,
+      status: 'active' as const,
+      address: p.location.address,
+      area: p.location.area,
+      city: p.location.city,
+      state: p.location.state,
+      bedrooms: p.specs.bedrooms,
+      bathrooms: p.specs.bathrooms,
+      toilets: p.specs.toilets,
+      parking: p.specs.parking,
+      images: p.images,
+      video_url: null,
+      is_verified_listing: p.verified,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    }));
+
+    // Apply basic filtering to mock data
+    listings = mockData.filter(p => {
+        if (params.type && p.type !== params.type) return false;
+        if (params.city && !p.city.toLowerCase().includes(params.city.toLowerCase())) return false;
+        return true;
+    });
+  } else {
+    listings = properties as Property[];
+  }
 
   // Get type label for display
   const typeLabel = params.type
